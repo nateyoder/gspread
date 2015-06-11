@@ -9,6 +9,7 @@ This module contains utility functions.
 """
 
 from xml.etree import ElementTree
+from math import ceil
 
 
 def finditem(func, seq):
@@ -87,6 +88,14 @@ def numericise_all(input, empty2zero=False):
     """Returns a list of numericised values from strings"""
     return [numericise(s, empty2zero) for s in input]
 
+
+def get_start_and_end_indices(num_items, block_size):
+    num_blocks = int(ceil(num_items / block_size))
+    if num_blocks == 0:
+        return [0], [num_items], 1
+    start_inds = [block_size * i for i in xrange(num_blocks)]
+    end_inds = [min(num_items, si + block_size) for si in start_inds]
+    return start_inds, end_inds, num_blocks
 
 if __name__ == '__main__':
     import doctest

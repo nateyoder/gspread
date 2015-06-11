@@ -18,7 +18,7 @@ from xml.etree.ElementTree import Element, SubElement
 from . import urlencode
 from .ns import _ns, _ns1, ATOM_NS, BATCH_NS, SPREADSHEET_NS
 from .urls import construct_url
-from .utils import finditem, numericise_all
+from .utils import finditem, numericise_all, get_start_and_end_indices
 
 from .exceptions import IncorrectCellLabel, WorksheetNotFound, CellNotFound
 
@@ -474,6 +474,65 @@ class Worksheet(object):
         """
         feed = self._create_update_feed(cell_list)
         self.client.post_cells(self, ElementTree.tostring(feed))
+
+    def _create_feed_cell(self, feed, row, col, value):
+        entry = SubElement(feed, 'entry')
+        base_url = construct_url('cells', self)
+
+        cell_id_url = '{base_url}/R{row}C{col}'.format(base_url=base_url, row=row, col=col)
+        SubElement(entry, 'batch:id').text = self.get_addr_int(row, col)
+        SubElement(entry, 'batch:operation', {'type': 'update'})
+        SubElement(entry, 'id').text = cell_id_url
+
+        SubElement(entry, 'link', {'rel': 'edit',
+                                   'type': 'application/atom+xml',
+                                   'href': cell_id_url})
+
+        SubElement(entry, 'gs:cell', {'row': str(row),
+                                      'col': str(col),
+                                      'inputValue': unicode(value)})
+
+    def _create_update_feed_for_dataframe(self, dataframe, start_row, start_col, header=True):
+        feed = Element('feed', {'xmlns': ATOM_NS,
+                                'xmlns:batch': BATCH_NS,
+                                'xmlns:gs': SPREADSHEET_NS})
+
+        id_elem = SubElement(feed, 'id')
+
+        id_elem.text = construct_url('cells', self)
+        if header:
+            for col in xrange(0, dataframe.shape[1]):
+                sheets_col = col + start_col
+                self._create_feed_cell(feed, start_row, sheets_col, dataframe.columns[col])
+
+            start_row += 1
+
+        for row in xrange(0, dataframe.shape[0]):
+            for col in xrange(0, dataframe.shape[1]):
+                sheets_row = row + start_row
+                sheets_col = col + start_col
+                self._create_feed_cell(feed, sheets_row, sheets_col, dataframe.iat[row, col])
+
+        return feed
+
+    def update_cells_from_dataframe(self, dataframe, start_row=1, start_col=1, header=True):
+        """Updates cells in batch.
+
+        :param cell_list: List of a :class:`Cell` objects to update.
+
+        """
+        # As declared by Google
+        # https://developers.google.com/api-client-library/python/guide/batch
+        max_rows_per_batch = 999 if header else 1000
+
+        start_inds, end_inds, num_blocks = get_start_and_end_indices(dataframe.shape[0], max_rows_per_batch)
+        for block in xrange(num_blocks):
+            feed = self._create_update_feed_for_dataframe(dataframe.iloc[start_inds[block]:end_inds[block], :],
+                                                          start_row,
+                                                          start_col,
+                                                          header)
+            self.client.post_cells(self, ElementTree.tostring(feed))
+            header = False
 
     def resize(self, rows=None, cols=None):
         """Resizes the worksheet.
