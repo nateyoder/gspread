@@ -532,7 +532,12 @@ class Worksheet(object):
                                                           start_col,
                                                           header)
             self.client.post_cells(self, ElementTree.tostring(feed))
-            header = False
+
+            if header:
+                start_row += 1
+                header = False
+
+            start_row += max_rows_per_batch
 
     def resize(self, rows=None, cols=None):
         """Resizes the worksheet.
