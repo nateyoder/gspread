@@ -90,7 +90,7 @@ def numericise_all(input, empty2zero=False):
 
 
 def get_start_and_end_indices(num_items, block_size):
-    num_blocks = int(ceil(num_items / block_size))
+    num_blocks = int(ceil(float(num_items) / block_size))
     if num_blocks == 0:
         return [0], [num_items], 1
     start_inds = [block_size * i for i in xrange(num_blocks)]
