@@ -20,11 +20,9 @@ description = 'Google Spreadsheets Python API'
 
 long_description = """
 {index}
-
 License
 -------
 MIT
-
 Download
 ========
 """
@@ -57,6 +55,5 @@ setup(
         "Topic :: Office/Business :: Financial :: Spreadsheet",
         "Topic :: Software Development :: Libraries :: Python Modules"
         ],
-    install_requires=install_requires,
     license='MIT'
     )
