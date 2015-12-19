@@ -515,7 +515,7 @@ class Worksheet(object):
 
         return feed
 
-    def update_cells_from_dataframe(self, dataframe, start_row=1, start_col=1, header=True):
+    def update_cells_from_dataframe(self, dataframe, start_row=1, start_col=1, header=True, verbose=True):
         """Updates cells in batch.
 
         :param cell_list: List of a :class:`Cell` objects to update.
@@ -527,6 +527,10 @@ class Worksheet(object):
 
         start_inds, end_inds, num_blocks = get_start_and_end_indices(dataframe.shape[0], max_rows_per_batch)
         for block in xrange(num_blocks):
+            if verbose:
+                from  sys import stdout
+                print "Uploading DF rows {}-{}".format(start_inds[block], end_inds[block])
+                stdout.flush()
             feed = self._create_update_feed_for_dataframe(dataframe.iloc[start_inds[block]:end_inds[block], :],
                                                           start_row,
                                                           start_col,
