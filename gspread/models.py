@@ -377,6 +377,10 @@ class Worksheet(object):
         idx = head - 1
 
         data = self.get_all_values()
+
+        if idx >= len(data):
+            return []
+
         keys = data[idx]
         values = [numericise_all(row, empty2zero) for row in data[idx + 1:]]
 
