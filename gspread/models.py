@@ -492,7 +492,7 @@ class Worksheet(object):
                                       'col': str(col),
                                       'inputValue': unicode(value)})
 
-    def _create_update_feed_for_dataframe(self, dataframe, start_row, start_col, header=True):
+    def _create_update_feed_for_dataframe(self, dataframe, start_row, start_col, skip_rows=0, header=True):
         feed = Element('feed', {'xmlns': ATOM_NS,
                                 'xmlns:batch': BATCH_NS,
                                 'xmlns:gs': SPREADSHEET_NS})
@@ -507,6 +507,9 @@ class Worksheet(object):
 
             start_row += 1
 
+        # Skip as many rows as desired after the header
+        start_row += skip_rows
+
         for row in xrange(0, dataframe.shape[0]):
             for col in xrange(0, dataframe.shape[1]):
                 sheets_row = row + start_row
@@ -515,7 +518,7 @@ class Worksheet(object):
 
         return feed
 
-    def update_cells_from_dataframe(self, dataframe, start_row=1, start_col=1, header=True, verbose=True):
+    def update_cells_from_dataframe(self, dataframe, start_row=1, start_col=1, skip_rows=0, header=True, verbose=True):
         """Updates cells in batch.
 
         :param cell_list: List of a :class:`Cell` objects to update.
@@ -534,6 +537,7 @@ class Worksheet(object):
             feed = self._create_update_feed_for_dataframe(dataframe.iloc[start_inds[block]:end_inds[block], :],
                                                           start_row,
                                                           start_col,
+                                                          skip_rows,
                                                           header)
             self.client.post_cells(self, ElementTree.tostring(feed))
 
