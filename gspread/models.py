@@ -24,8 +24,15 @@ from .exceptions import IncorrectCellLabel, WorksheetNotFound, CellNotFound
 
 
 try:
-    unicode
+    old_unicode = unicode
+    def new_unicode(txt):
+        try:
+            return old_unicode(txt)
+        except UnicodeDecodeError:
+            return old_unicode(txt, errors='replace')
+    unicode = new_unicode
 except NameError:
+    print 'Using str instead of unicode'
     basestring = unicode = str
 
 
@@ -491,10 +498,13 @@ class Worksheet(object):
         SubElement(entry, 'link', {'rel': 'edit',
                                    'type': 'application/atom+xml',
                                    'href': cell_id_url})
-
-        SubElement(entry, 'gs:cell', {'row': str(row),
-                                      'col': str(col),
-                                      'inputValue': unicode(value)})
+        try:
+            SubElement(entry, 'gs:cell', {'row': str(row),
+                                          'col': str(col),
+                                          'inputValue': unicode(value)})
+        except UnicodeDecodeError as e:
+            print row, col, value
+            raise SyntaxError('YOU SUCK')
 
     def _create_update_feed_for_dataframe(self, dataframe, start_row, start_col, skip_rows=0, header=True):
         feed = Element('feed', {'xmlns': ATOM_NS,
