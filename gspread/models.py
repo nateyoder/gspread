@@ -31,8 +31,15 @@ from .urls import (
 )
 
 try:
-    unicode
+    old_unicode = unicode
+    def new_unicode(txt):
+        try:
+            return old_unicode(txt)
+        except UnicodeDecodeError:
+            return old_unicode(txt, errors='replace')
+    unicode = new_unicode
 except NameError:
+    print 'Using str instead of unicode'
     basestring = unicode = str
 
 
@@ -812,6 +819,41 @@ class Worksheet(object):
 
         return data
 
+    def update_cells_from_dataframe(
+            self,
+            dataframe,
+            start_row=1,
+            start_col=1,
+            skip_rows=0,
+            header=True,
+            value_input_option='USER_ENTERED',
+    ):
+        data_rows, total_cols = dataframe.shape
+        total_rows = data_rows
+
+        row_values = []
+        if header:
+            row_values.append(dataframe.columns.tolist())
+            total_rows += 1
+
+        start = rowcol_to_a1(start_row + skip_rows, start_col)
+        end = rowcol_to_a1(start_row + skip_rows + total_rows, start_col + total_cols)
+        range_label = '%s!%s:%s' % (self.title, start, end)
+
+        row_values.extend(dataframe.values.tolist())
+
+        data = self.spreadsheet.values_update(
+            range_label,
+            params={
+                'valueInputOption': value_input_option
+            },
+            body={
+                'values': row_values
+            }
+        )
+
+        return data
+
     def resize(self, rows=None, cols=None):
         """Resizes the worksheet. Specify one of ``rows`` or ``cols``.
 
@@ -847,7 +889,9 @@ class Worksheet(object):
             }]
         }
 
-        return self.spreadsheet.batch_update(body)
+        output = self.spreadsheet.batch_update(body)
+        self._properties['gridProperties'].update(grid_properties)
+        return output
 
     def update_title(self, title):
         """Renames the worksheet.
