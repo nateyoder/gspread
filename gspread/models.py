@@ -18,7 +18,8 @@ from .utils import (
     finditem,
     fill_gaps,
     cell_list_to_rect,
-    quote
+    quote,
+    clean_df,
 )
 
 from .urls import (
@@ -839,6 +840,8 @@ class Worksheet(object):
         start = rowcol_to_a1(start_row + skip_rows, start_col)
         end = rowcol_to_a1(start_row + skip_rows + total_rows, start_col + total_cols)
         range_label = '%s!%s:%s' % (self.title, start, end)
+
+        dataframe = clean_df(dataframe, inplace=False)
 
         row_values.extend(dataframe.values.tolist())
 

@@ -255,6 +255,18 @@ def quote(value, safe='', encoding='utf-8'):
     return urllib.quote(value.encode(encoding), safe)
 
 
+def clean_df(input_df, inplace=False):
+    if not inplace:
+        input_df = input_df.copy()
+    # json doesn't do datetimes and try to make others strings as well
+    for c in input_df.select_dtypes(
+        include=["datetime", "datetimetz", "object"]
+    ).columns:
+        input_df.loc[:, c] = input_df[c].astype(str)
+
+    return input_df
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
