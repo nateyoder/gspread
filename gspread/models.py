@@ -40,7 +40,7 @@ try:
             return old_unicode(txt, errors='replace')
     unicode = new_unicode
 except NameError:
-    print 'Using str instead of unicode'
+    print('Using str instead of unicode')
     basestring = unicode = str
 
 
